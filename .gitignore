@@ -1,0 +1,7 @@
+# Whispir Git Ignore Rules
+models_cache/
+__pycache__/
+*.pyc
+.DS_Store
+verify_translation.py
+test_audio.wav

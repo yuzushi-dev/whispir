@@ -1,0 +1,10 @@
+services:
+  whispir:
+    build: .
+    image: whispir:latest
+    container_name: whispir_app
+    ports:
+      - "9999:9999"
+    volumes:
+      - ./models_cache:/root/.cache/huggingface
+    restart: unless-stopped
