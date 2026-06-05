@@ -222,371 +222,560 @@ st.markdown('<div class="hero-subtitle">Private local transcription and translat
 # Main layout split into Sidebar controls and Main Panel
 with st.sidebar:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown("### Model Settings")
-    
-    model_options = ["tiny", "base", "small", "medium", "turbo", "large-v3"]
-    default_index = model_options.index(recommended_model)
-    
-    model_size = st.selectbox(
-        "Whisper Model",
-        options=model_options,
-        index=default_index,
-        help=f"{rec_help} Larger models require more RAM and CPU processing."
+    st.markdown("### Application Mode")
+    app_mode = st.selectbox(
+        "Select Mode",
+        options=["Audio/Video Transcription", "Document Intelligence"],
+        index=0,
+        help="Switch between transcribing audio/video files or processing text documents."
     )
-    
-    task = st.selectbox(
-        "Mode (Task)",
-        options=["transcribe", "transcribe_and_translate_en", "transcribe_and_translate_it"],
-        format_func=lambda x: {
-            "transcribe": "Transcription Only",
-            "transcribe_and_translate_en": "Transcription + English Translation",
-            "transcribe_and_translate_it": "Transcription + Italian Translation"
-        }[x],
-        index=0
-    )
-    
-    languages = {
-        "Auto (Detect Language)": "Auto",
-        "Italian": "it",
-        "English": "en",
-        "Spanish": "es",
-        "French": "fr",
-        "German": "de",
-        "Portuguese": "pt",
-        "Chinese": "zh",
-        "Japanese": "ja",
-        "Russian": "ru"
-    }
-    
-    lang_label = st.selectbox(
-        "Source Language",
-        options=list(languages.keys()),
-        index=0
-    )
-    language_code = languages[lang_label]
-    
-    beam_size = st.slider(
-        "Beam Size",
-        min_value=1,
-        max_value=10,
-        value=5,
-        help="Higher values increase accuracy at the cost of speed. Default is 5."
-    )
-    
     st.markdown("</div>", unsafe_allow_html=True)
-    
-    # Dynamic Hardware Spec Box
-    st.markdown('<div class="glass-card" style="padding: 1rem; border-color: rgba(167, 139, 250, 0.2);">', unsafe_allow_html=True)
-    st.markdown("##### Detected Specs")
-    st.markdown(f"**CPU**: `{cpu_name}`")
-    st.markdown(f"**Cores**: `{cpu_cores} vCPU`")
-    st.markdown(f"**Detected RAM**: `{ram_gb} GB`")
-    st.markdown(f"**Recommended**: `{recommended_model.upper()}`")
-    st.markdown("</div>", unsafe_allow_html=True)
+
+    if app_mode == "Audio/Video Transcription":
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.markdown("### Model Settings")
+        
+        model_options = ["tiny", "base", "small", "medium", "turbo", "large-v3"]
+        default_index = model_options.index(recommended_model)
+        
+        model_size = st.selectbox(
+            "Whisper Model",
+            options=model_options,
+            index=default_index,
+            help=f"{rec_help} Larger models require more RAM and CPU processing."
+        )
+        
+        task = st.selectbox(
+            "Mode (Task)",
+            options=["transcribe", "transcribe_and_translate_en", "transcribe_and_translate_it"],
+            format_func=lambda x: {
+                "transcribe": "Transcription Only",
+                "transcribe_and_translate_en": "Transcription + English Translation",
+                "transcribe_and_translate_it": "Transcription + Italian Translation"
+            }[x],
+            index=0
+        )
+        
+        languages = {
+            "Auto (Detect Language)": "Auto",
+            "Italian": "it",
+            "English": "en",
+            "Spanish": "es",
+            "French": "fr",
+            "German": "de",
+            "Portuguese": "pt",
+            "Chinese": "zh",
+            "Japanese": "ja",
+            "Russian": "ru"
+        }
+        
+        lang_label = st.selectbox(
+            "Source Language",
+            options=list(languages.keys()),
+            index=0
+        )
+        language_code = languages[lang_label]
+        
+        beam_size = st.slider(
+            "Beam Size",
+            min_value=1,
+            max_value=10,
+            value=5,
+            help="Higher values increase accuracy at the cost of speed. Default is 5."
+        )
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Dynamic Hardware Spec Box
+        st.markdown('<div class="glass-card" style="padding: 1rem; border-color: rgba(167, 139, 250, 0.2);">', unsafe_allow_html=True)
+        st.markdown("##### Detected Specs")
+        st.markdown(f"**CPU**: `{cpu_name}`")
+        st.markdown(f"**Cores**: `{cpu_cores} vCPU`")
+        st.markdown(f"**Detected RAM**: `{ram_gb} GB`")
+        st.markdown(f"**Recommended**: `{recommended_model.upper()}`")
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+    else:  # Document Intelligence
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.markdown("### Document Settings")
+        
+        redact_pii = st.checkbox(
+            "Redact PII (OpenAI Privacy Filter)",
+            value=True,
+            help="Mask names, emails, addresses, phones, URLs, dates, secrets, etc. locally."
+        )
+        
+        translate_doc = st.checkbox(
+            "Translate Document",
+            value=False,
+            help="Translate extracted text using Helsinki-NLP/MarianMT models locally."
+        )
+        
+        doc_src_lang = "en"
+        doc_dest_lang = "it"
+        if translate_doc:
+            doc_src_lang = st.selectbox(
+                "Source Language",
+                options=["en", "es", "fr", "de", "it"],
+                index=0,
+                help="The language of the uploaded document."
+            )
+            doc_dest_lang = st.selectbox(
+                "Target Language",
+                options=["it", "en", "es", "fr", "de"],
+                index=0,
+                help="The language to translate the document content into."
+            )
+            
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # Main Panel
-st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-st.markdown("### Upload Audio or Video")
-uploaded_file = st.file_uploader(
-    "Drag and drop your file here (supported formats: MP4, MKV, AVI, MOV, MP3, WAV, M4A, AAC, FLAC)",
-    type=["mp4", "mkv", "avi", "mov", "mp3", "wav", "m4a", "aac", "flac"]
-)
-st.markdown("</div>", unsafe_allow_html=True)
-
-if uploaded_file is not None:
-    file_details = {
-        "File Name": uploaded_file.name,
-        "Size": f"{uploaded_file.size / (1024 * 1024):.2f} MB"
-    }
+if app_mode == "Audio/Video Transcription":
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown("### Upload Audio or Video")
+    uploaded_file = st.file_uploader(
+        "Drag and drop your file here (supported formats: MP4, MKV, AVI, MOV, MP3, WAV, M4A, AAC, FLAC)",
+        type=["mp4", "mkv", "avi", "mov", "mp3", "wav", "m4a", "aac", "flac"]
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write(f"**Selected File:** {file_details['File Name']}")
-    with col2:
-        st.write(f"**Size:** {file_details['Size']}")
+    if uploaded_file is not None:
+        file_details = {
+            "File Name": uploaded_file.name,
+            "Size": f"{uploaded_file.size / (1024 * 1024):.2f} MB"
+        }
         
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Process Button
-    if st.button("Start Processing"):
-        # Create temp file to save the upload
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as temp_file:
-            temp_file.write(uploaded_file.read())
-            temp_file_path = temp_file.name
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"**Selected File:** {file_details['File Name']}")
+        with col2:
+            st.write(f"**Size:** {file_details['Size']}")
             
-        try:
-            # 1. Load Whisper Model
-            with st.spinner(f"Loading Whisper model '{model_size}' into memory (offline)..."):
-                model = load_whisper_model(model_size)
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Process Button
+        if st.button("Start Processing"):
+            # Create temp file to save the upload
+            with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as temp_file:
+                temp_file.write(uploaded_file.read())
+                temp_file_path = temp_file.name
                 
-            st.markdown('<div class="status-box">Processing media file...</div>', unsafe_allow_html=True)
-            
-            # Setup indicators
-            progress_bar = st.progress(0.0)
-            status_text = st.empty()
-            
-            st.write("### Real-Time Preview")
-            
-            # Determine source language
-            detected_lang = language_code
-            if language_code == "Auto":
-                with st.spinner("Detecting source language..."):
-                    _, detect_info = model.transcribe(temp_file_path, beam_size=beam_size, vad_filter=True)
-                    detected_lang = detect_info.language
-                    st.info(f"Detected Language: `{detected_lang.upper()}`")
-            
-            # Determine pipeline configuration
-            passes = 1
-            has_translation = False
-            translator_tokenizer = None
-            translator_model = None
+            try:
+                # 1. Load Whisper Model
+                with st.spinner(f"Loading Whisper model '{model_size}' into memory (offline)..."):
+                    model = load_whisper_model(model_size)
+                    
+                st.markdown('<div class="status-box">Processing media file...</div>', unsafe_allow_html=True)
+                
+                # Setup indicators
+                progress_bar = st.progress(0.0)
+                status_text = st.empty()
+                
+                st.write("### Real-Time Preview")
+                
+                # Determine source language
+                detected_lang = language_code
+                if language_code == "Auto":
+                    with st.spinner("Detecting source language..."):
+                        _, detect_info = model.transcribe(temp_file_path, beam_size=beam_size, vad_filter=True)
+                        detected_lang = detect_info.language
+                        st.info(f"Detected Language: `{detected_lang.upper()}`")
+                
+                # Determine pipeline configuration
+                passes = 1
+                has_translation = False
+                translator_tokenizer = None
+                translator_model = None
 
-            if task == "transcribe_and_translate_en":
-                has_translation = True
-                if detected_lang != "en":
-                    passes = 2
-            elif task == "transcribe_and_translate_it":
-                has_translation = True
-                if detected_lang == "it":
-                    passes = 1
-                elif detected_lang in ["en", "es", "fr", "de"]:
-                    passes = 1
-                    with st.spinner(f"Loading local translator ({detected_lang.upper()} -> IT)..."):
-                        translator_tokenizer, translator_model = load_translator(detected_lang, "it")
+                if task == "transcribe_and_translate_en":
+                    has_translation = True
+                    if detected_lang != "en":
+                        passes = 2
+                elif task == "transcribe_and_translate_it":
+                    has_translation = True
+                    if detected_lang == "it":
+                        passes = 1
+                    elif detected_lang in ["en", "es", "fr", "de"]:
+                        passes = 1
+                        with st.spinner(f"Loading local translator ({detected_lang.upper()} -> IT)..."):
+                            translator_tokenizer, translator_model = load_translator(detected_lang, "it")
+                    else:
+                        passes = 2
+                        with st.spinner("Loading local translator (EN -> IT)..."):
+                            translator_tokenizer, translator_model = load_translator("en", "it")
+
+                original_segments = []
+                translated_segments = []
+
+                # Previews layout
+                if has_translation:
+                    tab_orig, tab_trans = st.tabs(["Original Transcript", "Translation"])
+                    with tab_orig:
+                        preview_orig = st.empty()
+                    with tab_trans:
+                        preview_trans = st.empty()
                 else:
-                    passes = 2
-                    with st.spinner("Loading local translator (EN -> IT)..."):
-                        translator_tokenizer, translator_model = load_translator("en", "it")
-
-            original_segments = []
-            translated_segments = []
-
-            # Previews layout
-            if has_translation:
-                tab_orig, tab_trans = st.tabs(["Original Transcript", "Translation"])
-                with tab_orig:
                     preview_orig = st.empty()
-                with tab_trans:
-                    preview_trans = st.empty()
-            else:
-                preview_orig = st.empty()
-                preview_trans = None
+                    preview_trans = None
 
-            # Pass 1: Transcription
-            with st.spinner("Running Pass 1/2: Transcribing original audio..." if passes == 2 else "Transcribing audio..."):
-                segments, info = model.transcribe(
-                    temp_file_path,
-                    beam_size=beam_size,
-                    language=None if language_code == "Auto" else language_code,
-                    task="transcribe",
-                    vad_filter=True
-                )
-                
-                orig_text = ""
-                trans_text = ""
-                duration = info.duration
-                start_time = time.time()
-                
-                for segment in segments:
-                    seg_data = {
-                        "start": segment.start,
-                        "end": segment.end,
-                        "text": segment.text.strip()
-                    }
-                    original_segments.append(seg_data)
-                    
-                    # Update progress
-                    if duration > 0:
-                        percent = min(segment.end / duration, 1.0)
-                        scaled_percent = percent * 0.5 if passes == 2 else percent
-                        progress_bar.progress(scaled_percent)
-                        elapsed = time.time() - start_time
-                        pass_label = "Pass 1/2: Transcribing" if passes == 2 else "Transcribing"
-                        status_text.text(f"{pass_label} | Progress: {percent*100:.1f}% | Segment: {segment.start:.1f}s - {segment.end:.1f}s | Elapsed: {int(elapsed)}s")
-                    
-                    # Render original preview
-                    timestamp_str = f"[{format_time(segment.start)} --> {format_time(segment.end)}]"
-                    orig_text += f"{timestamp_str} {seg_data['text']}\n"
-                    preview_orig.markdown(f'<div class="transcript-box">{orig_text}</div>', unsafe_allow_html=True)
-                    
-                    # If passes == 1 and we have translation, it's either identical or we translate via MarianMT here
-                    if passes == 1 and has_translation:
-                        if detected_lang == "en" or detected_lang == "it":
-                            # Identical
-                            translated_text = seg_data['text']
-                        else:
-                            # MarianMT translation
-                            translated_text = seg_data['text']
-                            if translator_tokenizer is not None and translator_model is not None:
-                                try:
-                                    inputs = translator_tokenizer(seg_data['text'], return_tensors="pt", padding=True)
-                                    translated_tokens = translator_model.generate(**inputs, max_length=512)
-                                    translated_text = translator_tokenizer.decode(translated_tokens[0], skip_special_tokens=True).strip()
-                                except Exception:
-                                    pass
-                        
-                        translated_segments.append({
-                            "start": segment.start,
-                            "end": segment.end,
-                            "text": translated_text
-                        })
-                        trans_text += f"{timestamp_str} {translated_text}\n"
-                        if preview_trans is not None:
-                            preview_trans.markdown(f'<div class="transcript-box">{trans_text}</div>', unsafe_allow_html=True)
-
-            # Pass 2: Translate via Whisper if needed
-            if passes == 2:
-                with st.spinner("Running Pass 2/2: Translating to English..." if task == "transcribe_and_translate_en" else "Running Pass 2/2: Translating to English & Italian..."):
+                # Pass 1: Transcription
+                with st.spinner("Running Pass 1/2: Transcribing original audio..." if passes == 2 else "Transcribing audio..."):
                     segments, info = model.transcribe(
                         temp_file_path,
                         beam_size=beam_size,
                         language=None if language_code == "Auto" else language_code,
-                        task="translate",
+                        task="transcribe",
                         vad_filter=True
                     )
                     
+                    orig_text = ""
                     trans_text = ""
                     duration = info.duration
                     start_time = time.time()
                     
                     for segment in segments:
-                        eng_text = segment.text.strip()
-                        
-                        if task == "transcribe_and_translate_en":
-                            translated_text = eng_text
-                        else: # transcribe_and_translate_it
-                            translated_text = eng_text
-                            if translator_tokenizer is not None and translator_model is not None:
-                                try:
-                                    inputs = translator_tokenizer(eng_text, return_tensors="pt", padding=True)
-                                    translated_tokens = translator_model.generate(**inputs, max_length=512)
-                                    translated_text = translator_tokenizer.decode(translated_tokens[0], skip_special_tokens=True).strip()
-                                except Exception:
-                                    pass
-                        
-                        translated_segments.append({
+                        seg_data = {
                             "start": segment.start,
                             "end": segment.end,
-                            "text": translated_text
-                        })
+                            "text": segment.text.strip()
+                        }
+                        original_segments.append(seg_data)
                         
-                        # Update progress (from 50% to 100%)
+                        # Update progress
                         if duration > 0:
                             percent = min(segment.end / duration, 1.0)
-                            scaled_percent = 0.5 + (percent * 0.5)
+                            scaled_percent = percent * 0.5 if passes == 2 else percent
                             progress_bar.progress(scaled_percent)
                             elapsed = time.time() - start_time
-                            status_text.text(f"Pass 2/2: Translating | Progress: {percent*100:.1f}% | Segment: {segment.start:.1f}s - {segment.end:.1f}s | Elapsed: {int(elapsed)}s")
+                            pass_label = "Pass 1/2: Transcribing" if passes == 2 else "Transcribing"
+                            status_text.text(f"{pass_label} | Progress: {percent*100:.1f}% | Segment: {segment.start:.1f}s - {segment.end:.1f}s | Elapsed: {int(elapsed)}s")
                         
-                        # Update translation preview
+                        # Render original preview
                         timestamp_str = f"[{format_time(segment.start)} --> {format_time(segment.end)}]"
-                        trans_text += f"{timestamp_str} {translated_text}\n"
-                        if preview_trans is not None:
-                            preview_trans.markdown(f'<div class="transcript-box">{trans_text}</div>', unsafe_allow_html=True)
+                        orig_text += f"{timestamp_str} {seg_data['text']}\n"
+                        preview_orig.markdown(f'<div class="transcript-box">{orig_text}</div>', unsafe_allow_html=True)
+                        
+                        # If passes == 1 and we have translation, it's either identical or we translate via MarianMT here
+                        if passes == 1 and has_translation:
+                            if detected_lang == "en" or detected_lang == "it":
+                                # Identical
+                                translated_text = seg_data['text']
+                            else:
+                                # MarianMT translation
+                                translated_text = seg_data['text']
+                                if translator_tokenizer is not None and translator_model is not None:
+                                    try:
+                                        inputs = translator_tokenizer(seg_data['text'], return_tensors="pt", padding=True)
+                                        translated_tokens = translator_model.generate(**inputs, max_length=512)
+                                        translated_text = translator_tokenizer.decode(translated_tokens[0], skip_special_tokens=True).strip()
+                                    except Exception:
+                                        pass
+                            
+                            translated_segments.append({
+                                "start": segment.start,
+                                "end": segment.end,
+                                "text": translated_text
+                            })
+                            trans_text += f"{timestamp_str} {translated_text}\n"
+                            if preview_trans is not None:
+                                preview_trans.markdown(f'<div class="transcript-box">{trans_text}</div>', unsafe_allow_html=True)
 
-            # Completed status
-            progress_bar.progress(1.0)
-            elapsed_total = time.time() - start_time
-            status_text.success(f"Processing Completed Successfully in {int(elapsed_total)} seconds!")
-            
-            if not original_segments:
-                st.warning("Could not detect any speech in the provided media file.")
-            else:
-                # 3. Create downloads
-                txt_orig = segments_to_txt(original_segments)
-                srt_orig = segments_to_srt(original_segments)
-                vtt_orig = segments_to_vtt(original_segments)
+                # Pass 2: Translate via Whisper if needed
+                if passes == 2:
+                    with st.spinner("Running Pass 2/2: Translating to English..." if task == "transcribe_and_translate_en" else "Running Pass 2/2: Translating to English & Italian..."):
+                        segments, info = model.transcribe(
+                            temp_file_path,
+                            beam_size=beam_size,
+                            language=None if language_code == "Auto" else language_code,
+                            task="translate",
+                            vad_filter=True
+                        )
+                        
+                        trans_text = ""
+                        duration = info.duration
+                        start_time = time.time()
+                        
+                        for segment in segments:
+                            eng_text = segment.text.strip()
+                            
+                            if task == "transcribe_and_translate_en":
+                                translated_text = eng_text
+                            else: # transcribe_and_translate_it
+                                translated_text = eng_text
+                                if translator_tokenizer is not None and translator_model is not None:
+                                    try:
+                                        inputs = translator_tokenizer(eng_text, return_tensors="pt", padding=True)
+                                        translated_tokens = translator_model.generate(**inputs, max_length=512)
+                                        translated_text = translator_tokenizer.decode(translated_tokens[0], skip_special_tokens=True).strip()
+                                    except Exception:
+                                        pass
+                            
+                            translated_segments.append({
+                                "start": segment.start,
+                                "end": segment.end,
+                                "text": translated_text
+                            })
+                            
+                            # Update progress (from 50% to 100%)
+                            if duration > 0:
+                                percent = min(segment.end / duration, 1.0)
+                                scaled_percent = 0.5 + (percent * 0.5)
+                                progress_bar.progress(scaled_percent)
+                                elapsed = time.time() - start_time
+                                status_text.text(f"Pass 2/2: Translating | Progress: {percent*100:.1f}% | Segment: {segment.start:.1f}s - {segment.end:.1f}s | Elapsed: {int(elapsed)}s")
+                            
+                            # Update translation preview
+                            timestamp_str = f"[{format_time(segment.start)} --> {format_time(segment.end)}]"
+                            trans_text += f"{timestamp_str} {translated_text}\n"
+                            if preview_trans is not None:
+                                preview_trans.markdown(f'<div class="transcript-box">{trans_text}</div>', unsafe_allow_html=True)
+
+                # Completed status
+                progress_bar.progress(1.0)
+                elapsed_total = time.time() - start_time
+                status_text.success(f"Processing Completed Successfully in {int(elapsed_total)} seconds!")
                 
+                if not original_segments:
+                    st.warning("Could not detect any speech in the provided media file.")
+                else:
+                    # 3. Create downloads
+                    txt_orig = segments_to_txt(original_segments)
+                    srt_orig = segments_to_srt(original_segments)
+                    vtt_orig = segments_to_vtt(original_segments)
+                    
+                    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+                    st.markdown("### Download Results")
+                    
+                    if has_translation:
+                        txt_trans = segments_to_txt(translated_segments)
+                        srt_trans = segments_to_srt(translated_segments)
+                        vtt_trans = segments_to_vtt(translated_segments)
+                        
+                        col_orig, col_trans = st.columns(2)
+                        
+                        with col_orig:
+                            st.markdown("#### Original Transcript")
+                            st.download_button(
+                                label="Download Plain Text (.txt)",
+                                data=txt_orig,
+                                file_name=f"{os.path.splitext(uploaded_file.name)[0]}_original.txt",
+                                mime="text/plain",
+                                key="dl_txt_orig"
+                            )
+                            st.download_button(
+                                label="Download Subtitles SRT (.srt)",
+                                data=srt_orig,
+                                file_name=f"{os.path.splitext(uploaded_file.name)[0]}_original.srt",
+                                mime="text/srt",
+                                key="dl_srt_orig"
+                            )
+                            st.download_button(
+                                label="Download Subtitles VTT (.vtt)",
+                                data=vtt_orig,
+                                file_name=f"{os.path.splitext(uploaded_file.name)[0]}_original.vtt",
+                                mime="text/vtt",
+                                key="dl_vtt_orig"
+                            )
+                            
+                        with col_trans:
+                            trans_lang_label = "Italian" if task == "transcribe_and_translate_it" else "English"
+                            st.markdown(f"#### Translated Text ({trans_lang_label})")
+                            st.download_button(
+                                label="Download Plain Text (.txt)",
+                                data=txt_trans,
+                                file_name=f"{os.path.splitext(uploaded_file.name)[0]}_translated.txt",
+                                mime="text/plain",
+                                key="dl_txt_trans"
+                            )
+                            st.download_button(
+                                label="Download Subtitles SRT (.srt)",
+                                data=srt_trans,
+                                file_name=f"{os.path.splitext(uploaded_file.name)[0]}_translated.srt",
+                                mime="text/srt",
+                                key="dl_srt_trans"
+                            )
+                            st.download_button(
+                                label="Download Subtitles VTT (.vtt)",
+                                data=vtt_trans,
+                                file_name=f"{os.path.splitext(uploaded_file.name)[0]}_translated.vtt",
+                                mime="text/vtt",
+                                key="dl_vtt_trans"
+                            )
+                    else:
+                        dl_col1, dl_col2, dl_col3 = st.columns(3)
+                        with dl_col1:
+                            st.download_button(
+                                label="Download Plain Text (.txt)",
+                                data=txt_orig,
+                                file_name=f"{os.path.splitext(uploaded_file.name)[0]}.txt",
+                                mime="text/plain",
+                                key="dl_txt_single"
+                            )
+                        with dl_col2:
+                            st.download_button(
+                                label="Download Subtitles SRT (.srt)",
+                                data=srt_orig,
+                                file_name=f"{os.path.splitext(uploaded_file.name)[0]}.srt",
+                                mime="text/srt",
+                                key="dl_srt_single"
+                            )
+                        with dl_col3:
+                            st.download_button(
+                                label="Download Subtitles VTT (.vtt)",
+                                data=vtt_orig,
+                                file_name=f"{os.path.splitext(uploaded_file.name)[0]}.vtt",
+                                mime="text/vtt",
+                                key="dl_vtt_single"
+                            )
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    
+            except Exception as e:
+                st.error(f"An error occurred during file processing: {str(e)}")
+                
+            finally:
+                # Clean up temp file
+                if os.path.exists(temp_file_path):
+                    os.remove(temp_file_path)
+
+else:  # Document Intelligence Panel
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown("### Upload Document or Image")
+    uploaded_file = st.file_uploader(
+        "Drag and drop your document here (supported formats: PDF, DOCX, XLSX, PPTX, HTML, PNG, JPG, JPEG, TIFF, TXT)",
+        type=["pdf", "docx", "xlsx", "pptx", "html", "png", "jpg", "jpeg", "tiff", "txt"]
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    if uploaded_file is not None:
+        file_details = {
+            "File Name": uploaded_file.name,
+            "Size": f"{uploaded_file.size / (1024 * 1024):.2f} MB"
+        }
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"**Selected File:** {file_details['File Name']}")
+        with col2:
+            st.write(f"**Size:** {file_details['Size']}")
+            
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Process Button
+        if st.button("Start Document Processing"):
+            ext = os.path.splitext(uploaded_file.name)[1].lower()
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
+                temp_file.write(uploaded_file.read())
+                temp_file_path = temp_file.name
+                
+            try:
+                st.markdown('<div class="status-box">Processing document...</div>', unsafe_allow_html=True)
+                
+                # Lazy import our document intelligence module
+                import document_intelligence as doc_intel
+                
+                # Phase 1: Convert / OCR
+                raw_text = ""
+                is_image = ext in [".png", ".jpg", ".jpeg", ".tiff"]
+                
+                if is_image:
+                    with st.spinner("Running visual OCR via GLM-OCR (offline CPU)..."):
+                        raw_text = doc_intel.ocr_document(temp_file_path)
+                else:
+                    with st.spinner("Extracting document content and formatting as Markdown..."):
+                        raw_text = doc_intel.convert_document(temp_file_path)
+                
+                # Phase 2: Redaction
+                redacted_text = ""
+                if redact_pii:
+                    with st.spinner("Sanitizing text using OpenAI Privacy Filter (offline CPU)..."):
+                        redacted_text = doc_intel.redact_text(raw_text)
+                else:
+                    redacted_text = raw_text
+                    
+                # Phase 3: Translation
+                translated_text = ""
+                if translate_doc:
+                    with st.spinner(f"Translating document ({doc_src_lang.upper()} -> {doc_dest_lang.upper()})..."):
+                        translated_text = doc_intel.translate_markdown(
+                            redacted_text, 
+                            src_lang=doc_src_lang, 
+                            dest_lang=doc_dest_lang, 
+                            load_translator_fn=load_translator
+                        )
+                
+                st.success("Document processing completed successfully!")
+                
+                # Output Layout
+                st.write("### Processed Document Preview")
+                
+                tabs_to_show = ["Original Text"]
+                if redact_pii:
+                    tabs_to_show.append("Redacted Text")
+                if translate_doc:
+                    tabs_to_show.append("Translated Text")
+                    
+                doc_tabs = st.tabs(tabs_to_show)
+                
+                tab_idx = 0
+                with doc_tabs[tab_idx]:
+                    st.markdown(f'<div class="transcript-box">{raw_text}</div>', unsafe_allow_html=True)
+                    
+                if redact_pii:
+                    tab_idx += 1
+                    with doc_tabs[tab_idx]:
+                        st.markdown(f'<div class="transcript-box">{redacted_text}</div>', unsafe_allow_html=True)
+                        
+                if translate_doc:
+                    tab_idx += 1
+                    with doc_tabs[tab_idx]:
+                        st.markdown(f'<div class="transcript-box">{translated_text}</div>', unsafe_allow_html=True)
+                
+                # Downloads Section
                 st.markdown('<div class="glass-card">', unsafe_allow_html=True)
                 st.markdown("### Download Results")
                 
-                if has_translation:
-                    txt_trans = segments_to_txt(translated_segments)
-                    srt_trans = segments_to_srt(translated_segments)
-                    vtt_trans = segments_to_vtt(translated_segments)
+                dl_col1, dl_col2, dl_col3 = st.columns(3)
+                
+                # Determine which text version to download by default (prefer translated, then redacted, then raw)
+                download_content = translated_text if translate_doc else (redacted_text if redact_pii else raw_text)
+                file_suffix = "_processed"
+                if redact_pii and translate_doc:
+                    file_suffix = "_redacted_translated"
+                elif redact_pii:
+                    file_suffix = "_redacted"
+                elif translate_doc:
+                    file_suffix = "_translated"
                     
-                    col_orig, col_trans = st.columns(2)
-                    
-                    with col_orig:
-                        st.markdown("#### Original Transcript")
-                        st.download_button(
-                            label="Download Plain Text (.txt)",
-                            data=txt_orig,
-                            file_name=f"{os.path.splitext(uploaded_file.name)[0]}_original.txt",
-                            mime="text/plain",
-                            key="dl_txt_orig"
-                        )
-                        st.download_button(
-                            label="Download Subtitles SRT (.srt)",
-                            data=srt_orig,
-                            file_name=f"{os.path.splitext(uploaded_file.name)[0]}_original.srt",
-                            mime="text/srt",
-                            key="dl_srt_orig"
-                        )
-                        st.download_button(
-                            label="Download Subtitles VTT (.vtt)",
-                            data=vtt_orig,
-                            file_name=f"{os.path.splitext(uploaded_file.name)[0]}_original.vtt",
-                            mime="text/vtt",
-                            key="dl_vtt_orig"
-                        )
-                        
-                    with col_trans:
-                        trans_lang_label = "Italian" if task == "transcribe_and_translate_it" else "English"
-                        st.markdown(f"#### Translated Text ({trans_lang_label})")
-                        st.download_button(
-                            label="Download Plain Text (.txt)",
-                            data=txt_trans,
-                            file_name=f"{os.path.splitext(uploaded_file.name)[0]}_translated.txt",
-                            mime="text/plain",
-                            key="dl_txt_trans"
-                        )
-                        st.download_button(
-                            label="Download Subtitles SRT (.srt)",
-                            data=srt_trans,
-                            file_name=f"{os.path.splitext(uploaded_file.name)[0]}_translated.srt",
-                            mime="text/srt",
-                            key="dl_srt_trans"
-                        )
-                        st.download_button(
-                            label="Download Subtitles VTT (.vtt)",
-                            data=vtt_trans,
-                            file_name=f"{os.path.splitext(uploaded_file.name)[0]}_translated.vtt",
-                            mime="text/vtt",
-                            key="dl_vtt_trans"
-                        )
-                else:
-                    dl_col1, dl_col2, dl_col3 = st.columns(3)
-                    with dl_col1:
-                        st.download_button(
-                            label="Download Plain Text (.txt)",
-                            data=txt_orig,
-                            file_name=f"{os.path.splitext(uploaded_file.name)[0]}.txt",
-                            mime="text/plain",
-                            key="dl_txt_single"
-                        )
-                    with dl_col2:
-                        st.download_button(
-                            label="Download Subtitles SRT (.srt)",
-                            data=srt_orig,
-                            file_name=f"{os.path.splitext(uploaded_file.name)[0]}.srt",
-                            mime="text/srt",
-                            key="dl_srt_single"
-                        )
-                    with dl_col3:
-                        st.download_button(
-                            label="Download Subtitles VTT (.vtt)",
-                            data=vtt_orig,
-                            file_name=f"{os.path.splitext(uploaded_file.name)[0]}.vtt",
-                            mime="text/vtt",
-                            key="dl_vtt_single"
-                        )
+                with dl_col1:
+                    st.download_button(
+                        label="Download Markdown (.md)",
+                        data=download_content,
+                        file_name=f"{os.path.splitext(uploaded_file.name)[0]}{file_suffix}.md",
+                        mime="text/markdown",
+                        key="dl_doc_md"
+                    )
+                with dl_col2:
+                    st.download_button(
+                        label="Download Plain Text (.txt)",
+                        data=download_content,
+                        file_name=f"{os.path.splitext(uploaded_file.name)[0]}{file_suffix}.txt",
+                        mime="text/plain",
+                        key="dl_doc_txt"
+                    )
+                with dl_col3:
+                    # Basic conversion to HTML for download convenience
+                    html_content = f"<html><body><pre style='white-space: pre-wrap; font-family: sans-serif;'>{download_content}</pre></body></html>"
+                    st.download_button(
+                        label="Download HTML (.html)",
+                        data=html_content,
+                        file_name=f"{os.path.splitext(uploaded_file.name)[0]}{file_suffix}.html",
+                        mime="text/html",
+                        key="dl_doc_html"
+                    )
                 st.markdown("</div>", unsafe_allow_html=True)
                 
-        except Exception as e:
-            st.error(f"An error occurred during file processing: {str(e)}")
-            
-        finally:
-            # Clean up temp file
-            if os.path.exists(temp_file_path):
-                os.remove(temp_file_path)
+            except Exception as e:
+                st.error(f"An error occurred during document processing: {str(e)}")
+            finally:
+                if os.path.exists(temp_file_path):
+                    os.remove(temp_file_path)

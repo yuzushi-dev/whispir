@@ -10,11 +10,12 @@ WORKDIR /app
 
 # Copy requirements and install python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy the application source code
 COPY app.py .
+COPY document_intelligence.py .
 
 # Expose port 9999 for Streamlit
 EXPOSE 9999

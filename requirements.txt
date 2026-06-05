@@ -1,5 +1,9 @@
 streamlit>=1.35.0
 faster-whisper>=1.0.3
-transformers>=4.40.0
+transformers>=4.46.0
 sentencepiece>=0.2.0
 protobuf>=5.26.1
+markitdown
+accelerate>=0.34.0
+pillow
+torchvision
