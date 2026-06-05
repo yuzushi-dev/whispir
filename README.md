@@ -1,64 +1,93 @@
 # Whispir - Local Transcription & Translation
 
-Whispir è una Web Application locale, privata e sicura per la trascrizione e la traduzione di file audio e video fino a 2 ore, alimentata da **Streamlit** e **faster-whisper**.
+Whispir is a secure, private, and offline web application for transcribing and translating audio and video files up to 2 hours. It is built using **Streamlit**, **faster-whisper**, and **Helsinki-NLP/MarianMT**.
 
-L'applicazione gira interamente offline all'interno di un container Docker, senza inviare dati all'esterno ed esponendo il servizio sulla porta **9999**.
-
----
-
-## Caratteristiche Principali
-
-- 🐳 **Dockerizzato**: Facile da avviare, nessuna necessità di installare python, ffmpeg o librerie C++ complesse sul sistema host.
-- 🏎️ **Super Veloce su CPU**: Utilizza `faster-whisper` con quantizzazione `int8` (CTranslate2) per massimizzare l'uso della CPU Intel i9-13950HX senza saturare la RAM.
-- 🗄️ **Cache Persistente**: I modelli di Whisper scaricati vengono salvati sul sistema host nella cartella `./models_cache` in modo da non doverli riscaricare ad ogni riavvio del container.
-- 📊 **Feedback in Tempo Reale**: Mostra l'avanzamento percentuale, il testo trascritto in tempo reale e stima il tempo residuo.
-- 📂 **Export Hub**: Permette di scaricare i risultati nei formati `.txt` (testo semplice), `.srt` (sottotitoli standard) o `.vtt` (formato WebVTT).
-- 🎙️ **VAD integrato**: Filtro Silero VAD abilitato di default per eliminare i silenzi ed evitare allucinazioni in video/audio lunghi.
+The application runs entirely offline within a Docker container, keeping all processed data private, and exposes its interface locally on port **9999**.
 
 ---
 
-## Requisiti
+## Key Features
 
-- Docker
-- Docker Compose
-
----
-
-## Come Avviare l'Applicazione
-
-1. Posizionati nella directory principale del progetto:
-   ```bash
-   cd /home/daniele/Scrivania/Whispir
-   ```
-
-2. Costruisci ed avvia il container in background:
-   ```bash
-   docker compose up --build -d
-   ```
-
-3. Apri il browser all'indirizzo:
-   [http://localhost:9999](http://localhost:9999)
+- 🐳 **Dockerized Setup**: Quick and easy initialization. No need to install python, ffmpeg, or native C++ dependencies on the host system.
+- 🏎️ **Optimized CPU Execution**: Powered by `faster-whisper` using CTranslate2 and `int8` quantization to run efficiently on CPU architectures.
+- 💻 **Dynamic Hardware Awareness**: Automatically scans host system hardware (CPU cores, RAM size) to recommend the optimal Whisper model.
+- 🔀 **Flexible Tasks Pipeline**:
+  - **Transcription Only**: High-fidelity transcript in the source language.
+  - **Transcription + English Translation**: Single-pass native Whisper translation to English.
+  - **Transcription + Italian Translation**: Dual-pass cascading translation (Whisper source transcription -> MarianMT English-to-Italian translation).
+- 🗂️ **Side-by-Side Live Preview**: Features a multi-tab view (`Original Transcript` and `Translation`) that updates in real-time as processing occurs.
+- 📂 **Decoupled Downloads**: Separated columns allow users to download transcripts and translations independently as Plain Text (`.txt`), Standard Subtitles (`.srt`), or WebVTT (`.vtt`).
+- 🎙️ **Voice Activity Detection (VAD)**: Built-in Silero VAD filtering to strip out silent intervals and prevent hallucinations during long files.
+- 💾 **Persistent Cache**: Model weights are stored on the host under `./models_cache` to avoid re-downloading upon container restarts.
 
 ---
 
-## Spegnere il Servizio
+## Prerequisites
 
-Per fermare e rimuovere i container:
+- **Docker**
+- **Docker Compose**
+
+---
+
+## Getting Started
+
+### 1. Build and Launch the Application
+
+Navigate to the project root directory and spin up the Docker container:
+
+```bash
+docker compose up --build -d
+```
+
+### 2. Access the Web Interface
+
+Open your browser and navigate to:
+[http://localhost:9999](http://localhost:9999)
+
+### 3. Stop the Application
+
+To shut down and remove the active container:
+
 ```bash
 docker compose down
 ```
 
 ---
 
-## Guida ai Modelli Whisper (Ottimizzati su CPU in `int8`)
+## Project Structure
 
-| Modello | Dimensione File | Uso RAM (Appross.) | Velocità CPU | Precisione Consigliata |
+```
+├── Dockerfile              # Python 3.12-slim based container environment
+├── README.md               # English project documentation
+├── app.py                  # Streamlit application code and pipeline execution logic
+├── docker-compose.yml      # Service container mapping (port 9999, model volume persistence)
+├── requirements.txt        # Python library dependencies (PyTorch CPU, faster-whisper, transformers)
+└── verify_translation.py   # Automated end-to-end integration test
+```
+
+---
+
+## Whisper Model Comparison Guide
+
+Whispir supports multiple Whisper model sizes depending on your system's resources:
+
+| Model | File Size | Approximate RAM | CPU Speed | Quality |
 | :--- | :--- | :--- | :--- | :--- |
-| **tiny** | ~75 MB | ~150 MB | Ultra veloce | Bassa (Ideale per test o bozze veloci) |
-| **base** | ~140 MB | ~250 MB | Molto veloce | Media |
-| **small** *(Default)* | ~460 MB | ~600 MB | Veloce | Buona (Consigliato per trascrizioni generali) |
-| **medium** | ~1.5 GB | ~2.0 GB | Moderato | Alta |
-| **turbo** | ~1.6 GB | ~2.2 GB | Veloce | Ottima (Eccellente bilanciamento qualità/velocità) |
-| **large-v3** | ~3.0 GB | ~3.8 GB | Lento | Massima (Ideale per linguaggi complessi o audio disturbati) |
+| **tiny** | ~75 MB | ~150 MB | Ultra-Fast | Low (Best for quick tests or drafts) |
+| **base** | ~140 MB | ~250 MB | Very Fast | Medium |
+| **small** | ~460 MB | ~600 MB | Fast | Good (Solid default selection) |
+| **medium** | ~1.5 GB | ~2.0 GB | Moderate | High |
+| **turbo** | ~1.6 GB | ~2.2 GB | Fast | Excellent (Great speed-to-accuracy balance) |
+| **large-v3** | ~3.0 GB | ~3.8 GB | Slow | Maximum (Best for complex audio or rare dialects) |
 
-*Nota: Durante il primo avvio di un modello selezionato, l'applicazione impiegherà alcuni minuti per scaricare i pesi da HuggingFace. Gli avvii successivi dello stesso modello saranno istantanei.*
+*Note: On the first run of a selected model, downloading the weights from HuggingFace might take a few minutes. Subsequent executions of the same model load instantly from the cache volume.*
+
+---
+
+## Troubleshooting
+
+### HuggingFace Download Errors
+If the container cannot reach HuggingFace to download models, verify your host network connection. The container needs initial outbound access to download model weights. Once downloaded, the application operates entirely offline.
+
+### Model Storage Persistence
+If models are redownloaded every time the container starts, ensure the `models_cache` directory exists in the project root on the host machine and has read/write permissions for the Docker user.
